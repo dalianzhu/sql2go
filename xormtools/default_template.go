@@ -11,7 +11,7 @@ func (t *{{.StrucName}}) Get() (*{{.StrucName}}, error) {
     if ok {
         return t, nil
     }
-    return nil, errors.New("TSnmpSubsvr not exists")
+    return nil, errors.New("{{.StrucName}} not exists")
 }
 
 func (t *{{.StrucName}}) GetList() ([]*{{.StrucName}}, error) {
