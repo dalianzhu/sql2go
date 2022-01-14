@@ -21,10 +21,13 @@
     <legend>xorm 转换</legend>
   </fieldset>
   <div class="layui-bg-gray" style="padding: 30px;">
-    <div class="layui-inline" style="padding: 50px 30px;">
-      <input name="" placeholder="输入引擎名称" class="layui-input" id="engineName">
+    <div class="layui-inline layui-col-md3" style="padding: 50px 20px;">
+      <input name="" placeholder="xorm实例名,如GlobalEngine" class="layui-input" value="GlobalEngine" id="engineName"/>
     </div>
-    <button type="button" class="layui-btn" id="convert">转换</button>
+    <div class="layui-inline layui-col-md3" style="padding: 50px 20px;">
+      <button type="button" class="layui-btn" id="convert">转换</button>
+    </div>
+    
     <div class="layui-row layui-col-space15">
       <div class="layui-col-md6">
         <div class="layui-panel">
@@ -32,7 +35,13 @@
           <div style="padding: 0px 30px;">
             <div style="padding: 0px 0px 10px 0px;">sql</div>
             <div style="padding: 0px 0px 10px 0px;">
-              <textarea placeholder="请输入内容" rows="20" class="layui-textarea" id="sql"></textarea>
+              <textarea placeholder="请输入内容" rows="20" class="layui-textarea" id="sql">CREATE TABLE IF NOT EXISTS `runoob_tbl`(
+   `runoob_id` INT UNSIGNED AUTO_INCREMENT,
+   `runoob_title` VARCHAR(100) NOT NULL,
+   `runoob_author` VARCHAR(40) NOT NULL,
+   `submission_date` DATE,
+   PRIMARY KEY ( `runoob_id` )
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;</textarea>
             </div>
           </div>
         </div>   

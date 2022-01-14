@@ -3,7 +3,7 @@ module github.com/dalianzhu/sql2go
 go 1.14
 
 require (
-	github.com/dalianzhu/myjson/v2 v2.0.5
+	github.com/dalianzhu/myjson/v2 v2.0.6
 	github.com/kr/text v0.2.0 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0 // indirect
