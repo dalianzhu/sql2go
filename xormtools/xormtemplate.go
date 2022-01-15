@@ -2,6 +2,7 @@ package xormtools
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"text/template"
 
@@ -23,9 +24,13 @@ type Field struct {
 	DbName string
 }
 
-func GenerateStructInfo(stmt *sqlparser.DDL, dbEngine string) string {
+func GenerateStructMethod(stmt *sqlparser.DDL, dbEngine string) (string, error) {
 	d := new(CodeInfo)
-	d.StrucName, d.PK, d.PKType, d.PKTypeNil, d.Fields = GetInfo(stmt)
+	var err error
+	d.StrucName, d.PK, d.PKType, d.PKTypeNil, d.Fields, err = GenerateXormStruct(stmt)
+	if err != nil {
+		return "", err
+	}
 	d.DbEngine = dbEngine
 	tmpl := template.New("t1")
 	// tmpl = tmpl.Funcs(MapFuncs)
@@ -33,19 +38,24 @@ func GenerateStructInfo(stmt *sqlparser.DDL, dbEngine string) string {
 
 	var doc bytes.Buffer
 	tmpl.Execute(&doc, d)
-	return string(doc.Bytes())
+	return string(doc.Bytes()), nil
 }
 
-func GetInfo(stmt *sqlparser.DDL) (structName string, pk string, pkType string, pkTypeNil string, fields []*Field) {
+func GenerateXormStruct(stmt *sqlparser.DDL) (structName string,
+	pk string, pkType string, pkTypeNil string, fields []*Field, err error) {
 	tableName := stmt.NewName.Name.String()
 	structName = snakeCaseToCamel(tableName)
-	primary := getPrimary(stmt.TableSpec)
+	primary := getPrimarys(stmt.TableSpec)
 
 	pk = snakeCaseToCamel(primary[0])
 
 	for _, col := range stmt.TableSpec.Columns {
 		columnType := col.Type.Type
-		goType := sqlTypeMap[columnType]
+		goType, ok := sqlType2GoMap[columnType]
+		if !ok {
+			err = fmt.Errorf("sql %v type is not supported", columnType)
+			return
+		}
 
 		if col.Type.Unsigned {
 			columnType += " unsigned"

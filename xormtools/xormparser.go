@@ -1,6 +1,7 @@
 package xormtools
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -77,7 +78,7 @@ func (x *XormConverter) StmtToGo(stmt *sqlparser.DDL, pkgName string, dbEngine s
 
 	header := fmt.Sprintf("package %s\n", pkgName)
 	// import time package
-	headerPkg := "import (\n" +
+	timePkg := "import (\n" +
 		"\t\"time\"\n" +
 		")\n\n"
 	importTime := false
@@ -86,15 +87,19 @@ func (x *XormConverter) StmtToGo(stmt *sqlparser.DDL, pkgName string, dbEngine s
 	structStart := fmt.Sprintf("type %s struct { \n", structName)
 	builder.WriteString(structStart)
 
-	primary := getPrimary(stmt.TableSpec)
+	primary := getPrimarys(stmt.TableSpec)
 
 	codeInfo := new(CodeInfo)
 	if len(primary) == 0 {
-		return "", fmt.Errorf("no primary key")
+		return "", fmt.Errorf("no primary key entered")
+	}
+	if len(primary) > 1 {
+		return "", errors.New("composite primary keys are not currently supported")
 	}
 	codeInfo.PK = primary[0]
 	codeInfo.DbEngine = dbEngine
 
+	// build model struct
 	for _, col := range stmt.TableSpec.Columns {
 		columnType := col.Type.Type
 
@@ -102,7 +107,7 @@ func (x *XormConverter) StmtToGo(stmt *sqlparser.DDL, pkgName string, dbEngine s
 			columnType += " unsigned"
 		}
 
-		goType := sqlTypeMap[columnType]
+		goType := sqlType2GoMap[columnType]
 		if goType == "time.Time" {
 			importTime = true
 		}
@@ -120,11 +125,14 @@ func (x *XormConverter) StmtToGo(stmt *sqlparser.DDL, pkgName string, dbEngine s
 	}
 	builder.WriteString("}\n")
 
-	// struct info
-	structInfo := GenerateStructInfo(stmt, dbEngine)
+	// generate default model methods
+	structInfo, err := GenerateStructMethod(stmt, dbEngine)
+	if err != nil {
+		return "", err
+	}
 
 	if importTime {
-		return header + headerPkg + builder.String() + structInfo, nil
+		return header + timePkg + builder.String() + structInfo, nil
 	}
 	return header + builder.String() + structInfo, nil
 }
@@ -148,7 +156,7 @@ func snakeCaseToCamel(str string) string {
 	return builder.String()
 }
 
-func getPrimary(table *sqlparser.TableSpec) []string {
+func getPrimarys(table *sqlparser.TableSpec) []string {
 	ret := make([]string, 0)
 	for _, index := range table.Indexes {
 		if index.Info.Primary {
@@ -169,7 +177,7 @@ func stringIn(s string, arr []string) bool {
 	return false
 }
 
-var sqlTypeMap = map[string]string{
+var sqlType2GoMap = map[string]string{
 	"int":                "int",
 	"integer":            "int",
 	"tinyint":            "int8",
